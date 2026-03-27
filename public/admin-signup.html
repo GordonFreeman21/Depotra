@@ -13,22 +13,19 @@
         <img class="logo-img" src="logo.svg" alt="Depotra Logo" />
       </div>
       <h1>Create Admin Account</h1>
-      <p id="authRequiredMessage" class="warning-text hidden">
-        You must be logged in as an admin to create new admin accounts
-      </p>
 
-      <form id="signupForm" class="form-stack">
-        <input id="signupUsername" class="input" type="text" placeholder="Username" required />
-        <input id="signupPassword" class="input" type="password" placeholder="Password" required />
-        <input id="confirmPassword" class="input" type="password" placeholder="Confirm Password" required />
-        <button class="btn btn-green" type="submit">Create Admin</button>
-      </form>
-
-      <p id="signupMessage" class="muted"></p>
-      <a class="muted" href="admin-login.html">Back to Login</a>
+      <div id="accessDenied">
+        <p class="warning-text">
+          ⛔ Access Denied — Admin accounts can only be created by existing admins from within the
+          <strong>Admin Dashboard</strong>.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:20px;text-align:center;">
+          <a class="btn btn-green" href="admin-login.html">Login as Admin</a>
+          <a class="muted" href="/">Back to Store</a>
+        </div>
+      </div>
     </main>
 
-    <script src="js/storage.js"></script>
     <script src="js/admin-signup.js"></script>
   </body>
 </html>
