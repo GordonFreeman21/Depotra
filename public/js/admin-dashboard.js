@@ -7,7 +7,13 @@ function requireAdmin() {
     return null;
   }
   try {
-    return JSON.parse(adminRaw);
+    const admin = JSON.parse(adminRaw);
+    if (!admin || !admin.token) {
+      localStorage.removeItem('depotra_admin');
+      window.location.href = 'admin-login.html';
+      return null;
+    }
+    return admin;
   } catch {
     window.location.href = 'admin-login.html';
     return null;
@@ -63,8 +69,6 @@ const statusFilterBtns = document.querySelectorAll('.filter-btn');
 
 // ── State ────────────────────────────────────────────────────────────────────
 let sortState = { key: 'updatedAt', dir: 'desc' };
-let lastDeletedGame = null;
-let lastDeletedIndex = -1;
 let activeFilter = 'all';
 let confirmCallback = null;
 
@@ -149,12 +153,12 @@ function getGames() {
   return window.depotraStorage.listGames();
 }
 
-function saveGame(formData) {
-  const id = formData.get('gameId') || crypto.randomUUID();
+async function saveGame(formData) {
+  // Empty id → POST (create new game); non-empty id → PUT (update existing game)
+  const id = formData.get('gameId') || '';
   const tags = String(formData.get('tags') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
 
-  const game = {
-    id,
+  const payload = {
     steamAppId: String(formData.get('steamAppId') || '').trim(),
     title: String(formData.get('title') || '').trim(),
     description: String(formData.get('description') || '').trim(),
@@ -165,19 +169,34 @@ function saveGame(formData) {
     publisher: String(formData.get('publisher') || '').trim(),
     releaseDate: String(formData.get('releaseDate') || '').trim(),
     tags,
-    featured: formData.get('featured') === 'on',
-    uploadedBy: currentAdmin?.username || 'admin',
-    updatedAt: new Date().toISOString()
+    featured: formData.get('featured') === 'on'
   };
 
-  const existing = window.depotraStorage.findGameById(id);
-  if (existing) {
-    game.createdAt = existing.createdAt || new Date().toISOString();
-    window.depotraStorage.updateGame(id, { ...existing, ...game });
-  } else {
-    game.createdAt = new Date().toISOString();
-    window.depotraStorage.addGame(game);
+  const url = id ? `/api/admin/games/${encodeURIComponent(id)}` : '/api/admin/games';
+  const method = id ? 'PUT' : 'POST';
+
+  const response = await fetch(url, {
+    method,
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `Failed to save game (${response.status})`);
   }
+
+  const savedGame = await response.json();
+
+  // Sync localStorage with full API response (includes steamData with metacritic)
+  const existing = window.depotraStorage.findGameById(savedGame.id);
+  if (existing) {
+    window.depotraStorage.updateGame(savedGame.id, savedGame);
+  } else {
+    window.depotraStorage.addGame(savedGame);
+  }
+
+  return savedGame;
 }
 
 function fillForm(game) {
@@ -373,13 +392,17 @@ fetchSteamBtn.addEventListener('click', async () => {
   }
 });
 
-gameForm.addEventListener('submit', (event) => {
+gameForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const formData = new FormData(gameForm);
-  saveGame(formData);
-  showToast('Game saved successfully');
-  closeModal();
-  renderRows();
+  try {
+    await saveGame(formData);
+    showToast('Game saved successfully');
+    closeModal();
+    renderRows();
+  } catch (error) {
+    showToast(error.message || 'Failed to save game', 'error');
+  }
 });
 
 dashboardSearch.addEventListener('input', renderRows);
@@ -425,8 +448,28 @@ bulkDeleteBtn.addEventListener('click', async () => {
   );
   if (!confirmed) return;
 
-  ids.forEach((id) => window.depotraStorage.deleteGame(id));
-  showToast(`${ids.length} game${ids.length !== 1 ? 's' : ''} deleted`);
+  let failed = 0;
+  for (const id of ids) {
+    try {
+      const response = await fetch(`/api/admin/games/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      if (response.ok) {
+        window.depotraStorage.deleteGame(id);
+      } else {
+        failed++;
+      }
+    } catch {
+      failed++;
+    }
+  }
+
+  if (failed > 0) {
+    showToast(`${failed} game${failed !== 1 ? 's' : ''} could not be deleted`, 'error');
+  } else {
+    showToast(`${ids.length} game${ids.length !== 1 ? 's' : ''} deleted`);
+  }
   renderRows();
 });
 
@@ -505,19 +548,23 @@ gamesTableBody.addEventListener('click', async (event) => {
     const confirmed = await confirmAction(`Delete "${game.title || 'this game'}"? This cannot be undone.`);
     if (!confirmed) return;
 
-    const allGames = getGames();
-    lastDeletedIndex = allGames.findIndex((item) => item.id === gameId);
-    lastDeletedGame = window.depotraStorage.deleteGame(gameId);
-    showToast('Game deleted', 'error', 'Undo', () => {
-      if (!lastDeletedGame) return;
-      const db = window.depotraStorage.getDatabase();
-      db.games.splice(Math.max(0, lastDeletedIndex), 0, lastDeletedGame);
-      window.depotraStorage.setDatabase(db);
-      renderRows();
-      showToast('Game restored');
-      lastDeletedGame = null;
-      lastDeletedIndex = -1;
-    });
+    try {
+      const response = await fetch(`/api/admin/games/${encodeURIComponent(gameId)}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        showToast(err.message || `Failed to delete game (${response.status})`, 'error');
+        return;
+      }
+    } catch {
+      showToast('Failed to delete game', 'error');
+      return;
+    }
+
+    window.depotraStorage.deleteGame(gameId);
+    showToast('Game deleted');
     renderRows();
   }
 });
@@ -594,7 +641,7 @@ createAdminForm.addEventListener('submit', async (event) => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-  await window.depotraStorage.hydrateGamesFromApi();
+  await window.depotraStorage.refreshGamesFromApi();
   renderRows();
 }
 
