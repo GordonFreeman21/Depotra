@@ -7,7 +7,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
   const password = document.getElementById('password').value;
   const error = document.getElementById('loginError');
 
-  const admin = window.vaporStorage.findAdmin(username);
+  const admin = window.depotraStorage.findAdmin(username);
   if (!admin || admin.password !== password) {
     error.textContent = 'Invalid username or password.';
     error.className = 'error-text';
@@ -15,7 +15,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
   }
 
   // Save login state (for demo: localStorage)
-  localStorage.setItem('vaportools_admin', JSON.stringify({
+  localStorage.setItem('depotra_admin', JSON.stringify({
     id: admin.id,
     username: admin.username,
     loginAt: new Date().toISOString()

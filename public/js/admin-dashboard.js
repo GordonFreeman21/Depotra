@@ -1,7 +1,7 @@
 // admin-dashboard.js
 
 function requireAdmin() {
-  const adminRaw = localStorage.getItem('vaportools_admin');
+  const adminRaw = localStorage.getItem('depotra_admin');
   if (!adminRaw) {
     window.location.href = 'admin-login.html';
     return null;
@@ -51,7 +51,7 @@ function closeModal() {
 }
 
 function getGames() {
-  return window.vaporStorage.listGames();
+  return window.depotraStorage.listGames();
 }
 
 function escapeHtml(value) {
@@ -117,13 +117,13 @@ function saveGame(formData) {
     updatedAt: new Date().toISOString()
   };
 
-  const existing = window.vaporStorage.findGameById(id);
+  const existing = window.depotraStorage.findGameById(id);
   if (existing) {
     game.createdAt = existing.createdAt || new Date().toISOString();
-    window.vaporStorage.updateGame(id, { ...existing, ...game });
+    window.depotraStorage.updateGame(id, { ...existing, ...game });
   } else {
     game.createdAt = new Date().toISOString();
-    window.vaporStorage.addGame(game);
+    window.depotraStorage.addGame(game);
   }
 }
 
@@ -197,7 +197,7 @@ function fillForm(game) {
 }
 
 logoutBtn.addEventListener('click', () => {
-  localStorage.removeItem('vaportools_admin');
+  localStorage.removeItem('depotra_admin');
   window.location.href = 'admin-login.html';
 });
 
@@ -228,7 +228,7 @@ gamesTableBody.addEventListener('click', (event) => {
 
   const action = button.getAttribute('data-action');
   const gameId = button.getAttribute('data-id');
-  const game = window.vaporStorage.findGameById(gameId);
+  const game = window.depotraStorage.findGameById(gameId);
   if (!game) return;
 
   if (action === 'edit') {
@@ -241,14 +241,14 @@ gamesTableBody.addEventListener('click', (event) => {
   if (action === 'delete') {
     const allGames = getGames();
     lastDeletedIndex = allGames.findIndex((item) => item.id === gameId);
-    lastDeletedGame = window.vaporStorage.deleteGame(gameId);
+    lastDeletedGame = window.depotraStorage.deleteGame(gameId);
     showToast('Game deleted', 'error', 'Undo', () => {
       if (!lastDeletedGame) {
         return;
       }
-      const db = window.vaporStorage.getDatabase();
+      const db = window.depotraStorage.getDatabase();
       db.games.splice(Math.max(0, lastDeletedIndex), 0, lastDeletedGame);
-      window.vaporStorage.setDatabase(db);
+      window.depotraStorage.setDatabase(db);
       renderRows();
       showToast('Game restored');
       lastDeletedGame = null;
@@ -278,7 +278,7 @@ gameModal.addEventListener('click', (event) => {
 });
 
 async function init() {
-  await window.vaporStorage.hydrateGamesFromApi();
+  await window.depotraStorage.hydrateGamesFromApi();
   renderRows();
 }
 

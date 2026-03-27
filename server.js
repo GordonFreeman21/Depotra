@@ -11,7 +11,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'vapor_tools_secret_key_change_this_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'depotra_secret_key_change_this_in_production';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const PUBLIC_PATH = path.join(__dirname, 'public');
 
@@ -25,7 +25,7 @@ const DEFAULT_ADMIN = {
   password: 'Coolgang57'
 };
 
-const PLACEHOLDER_IMAGE = 'https://placehold.co/920x430/213040/c7d5e0?text=Vapor+Tools';
+const PLACEHOLDER_IMAGE = 'https://placehold.co/920x430/213040/c7d5e0?text=Depotra';
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -551,7 +551,7 @@ app.use((req, res) => {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>404 - Vapor Tools</title>
+        <title>404 - Depotra</title>
         <style>
           body {
             margin: 0;
@@ -580,7 +580,7 @@ app.use((req, res) => {
         <div class="box">
           <h1>404</h1>
           <p>Page not found.</p>
-          <a href="/">Return to Vapor Tools Store</a>
+          <a href="/">Return to Depotra Store</a>
         </div>
       </body>
     </html>
@@ -590,10 +590,10 @@ app.use((req, res) => {
 initializeDatabase()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Vapor Tools server running on http://localhost:${PORT}`);
+      console.log(`Depotra server running on http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
-    console.error('Failed to initialize Vapor Tools:', error);
+    console.error('Failed to initialize Depotra:', error);
     process.exit(1);
   });

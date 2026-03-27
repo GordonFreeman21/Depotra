@@ -1,7 +1,33 @@
 // storage.js
 // Utility functions for localStorage-based admin and game management
 
-const STORAGE_KEY = 'vaportools_db';
+const STORAGE_KEY = 'depotra_db';
+
+// Migrate data from old 'vaportools_*' keys to new 'depotra_*' keys
+(function migrateFromVaportools() {
+  if (!localStorage.getItem(STORAGE_KEY)) {
+    const oldDb = localStorage.getItem('vaportools_db');
+    if (oldDb) {
+      localStorage.setItem(STORAGE_KEY, oldDb);
+      localStorage.removeItem('vaportools_db');
+    }
+  } else {
+    localStorage.removeItem('vaportools_db');
+  }
+  if (!localStorage.getItem('depotra_seeded_games') && localStorage.getItem('vaportools_seeded_games')) {
+    localStorage.setItem('depotra_seeded_games', '1');
+  }
+  localStorage.removeItem('vaportools_seeded_games');
+  if (!localStorage.getItem('depotra_admin')) {
+    const oldAdmin = localStorage.getItem('vaportools_admin');
+    if (oldAdmin) {
+      localStorage.setItem('depotra_admin', oldAdmin);
+      localStorage.removeItem('vaportools_admin');
+    }
+  } else {
+    localStorage.removeItem('vaportools_admin');
+  }
+})();
 
 function getDatabase() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -69,7 +95,7 @@ function deleteGame(id) {
 }
 
 // Expose functions globally for use in HTML
-window.vaporStorage = {
+window.depotraStorage = {
   getDatabase,
   setDatabase,
   addAdmin,
@@ -97,7 +123,7 @@ window.vaporStorage = {
 })();
 
 async function hydrateGamesFromApi() {
-  const seededFlag = localStorage.getItem('vaportools_seeded_games');
+  const seededFlag = localStorage.getItem('depotra_seeded_games');
   const db = getDatabase();
   if (seededFlag || (Array.isArray(db.games) && db.games.length > 0)) {
     return;
@@ -114,10 +140,10 @@ async function hydrateGamesFromApi() {
     }
     db.games = games;
     setDatabase(db);
-    localStorage.setItem('vaportools_seeded_games', '1');
+    localStorage.setItem('depotra_seeded_games', '1');
   } catch {
     // ignore seed errors; app can still work with empty local data
   }
 }
 
-window.vaporStorage.hydrateGamesFromApi = hydrateGamesFromApi;
+window.depotraStorage.hydrateGamesFromApi = hydrateGamesFromApi;
