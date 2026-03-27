@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Depotra - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="favicon/favicon.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="/" class="logo">
+        <img class="logo-img" src="logo.svg" alt="Depotra Logo" />
+        <span class="logo-text">Admin Dashboard</span>
+      </a>
+      <div class="nav-controls">
+        <span class="muted" id="adminIdentity">Logged in as <strong id="adminUsername">admin</strong></span>
+        <button id="logoutBtn" class="btn btn-red" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="stats-grid">
+        <article class="card stat-card">
+          <h3>Total Games</h3>
+          <p id="totalGames">0</p>
+        </article>
+        <article class="card stat-card">
+          <h3>Featured Games</h3>
+          <p id="featuredGames">0</p>
+        </article>
+        <article class="card stat-card">
+          <h3>Recently Added</h3>
+          <p id="recentGames">0</p>
+        </article>
+        <article class="card stat-card">
+          <h3>Missing Images</h3>
+          <p id="missingImages">0</p>
+        </article>
+      </section>
+
+      <section class="dashboard-controls">
+        <input id="dashboardSearch" class="input" type="text" placeholder="Search games..." />
+        <button id="addGameBtn" class="btn btn-green" type="button">Add New Game</button>
+      </section>
+
+      <section class="card table-wrap">
+        <table class="game-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th><button class="sort-btn" data-sort="title" type="button">Title</button></th>
+              <th><button class="sort-btn" data-sort="genre" type="button">Genre</button></th>
+              <th><button class="sort-btn" data-sort="featured" type="button">Featured</button></th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="gamesTableBody"></tbody>
+        </table>
+        <p id="dashboardEmpty" class="empty-state hidden">No games found.</p>
+      </section>
+    </main>
+
+    <div id="gameModal" class="modal side-modal hidden">
+      <div class="modal-content card side-panel">
+        <div class="modal-header">
+          <h2 id="modalTitle">Game Editor</h2>
+          <button id="closeModalBtn" class="btn btn-red" type="button">X</button>
+        </div>
+
+        <form id="gameForm" class="form-grid">
+          <input id="gameId" type="hidden" />
+
+          <label>
+            Steam App ID (optional)
+            <div class="inline-row">
+              <input id="steamAppId" class="input" type="text" placeholder="e.g. 730" />
+              <button id="fetchSteamBtn" class="btn btn-blue" type="button">Fetch from Steam</button>
+            </div>
+          </label>
+
+          <label>Title<input id="title" class="input" type="text" required /></label>
+          <label>Description<textarea id="description" class="input textarea" required></textarea></label>
+          <label>Image URL<input id="imageUrl" class="input" type="url" /></label>
+          <label>Direct Download Link<input id="downloadLink" class="input" type="url" required /></label>
+          <label>Genre<input id="genre" class="input" type="text" /></label>
+          <label>Developer<input id="developer" class="input" type="text" /></label>
+          <label>Publisher<input id="publisher" class="input" type="text" /></label>
+          <label>Release Date<input id="releaseDate" class="input" type="text" placeholder="YYYY-MM-DD or Steam date" /></label>
+          <label>Tags (comma separated)<input id="tags" class="input" type="text" placeholder="action, adventure" /></label>
+
+          <label class="checkbox-row">
+            <input id="featured" type="checkbox" /> Featured Game
+          </label>
+
+          <div class="modal-actions">
+            <button class="btn btn-green" type="submit">Save Game</button>
+            <button id="cancelModalBtn" class="btn btn-blue" type="button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div id="dashboardLoading" class="loading-overlay hidden">
+      <div class="spinner"></div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/admin-dashboard.js"></script>
+  </body>
+</html>

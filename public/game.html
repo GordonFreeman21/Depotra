@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Depotra - Game</title>
+    <link rel="icon" type="image/png" href="favicon/favicon.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="/" class="logo logo-only">
+        <img class="logo-img" src="logo.svg" alt="Depotra Logo" />
+      </a>
+      <a class="btn btn-blue" href="/">Back to Store</a>
+    </header>
+
+    <main class="container game-page">
+      <div id="gameLoading" class="loading-wrap">
+        <div class="spinner"></div>
+        <p>Loading game details...</p>
+      </div>
+
+      <div id="gameContent" class="hidden">
+        <section class="game-hero-split card">
+          <img id="gameHeaderImage" class="game-banner" src="" alt="Game Banner" />
+          <div class="game-title-wrap">
+            <h1 id="gameTitle">Game Title</h1>
+            <div class="quick-meta" id="quickMeta"></div>
+            <a id="downloadBtn" class="btn btn-green btn-lg" href="#" target="_blank" rel="noopener noreferrer">DOWNLOAD NOW</a>
+          </div>
+        </section>
+
+        <div class="game-tabs" role="tablist" aria-label="Game Sections">
+          <button class="tab-btn active" data-tab="overview" type="button">Overview</button>
+          <button class="tab-btn" data-tab="requirements" type="button">System Requirements</button>
+          <button class="tab-btn" data-tab="screenshots" type="button">Screenshots</button>
+        </div>
+
+        <div class="game-layout">
+          <section class="game-main card tab-panel" data-panel="overview">
+            <h3>Description</h3>
+            <div id="gameDescription" class="rich-text"></div>
+          </section>
+
+          <section id="requirementsPanel" class="card tab-panel hidden" data-panel="requirements">
+            <h3>System Requirements</h3>
+            <div id="systemRequirements" class="rich-text">Not provided.</div>
+          </section>
+
+          <section id="screenshotsPanel" class="card tab-panel hidden" data-panel="screenshots">
+            <h3>Screenshots</h3>
+            <div class="screenshot-viewer">
+              <button id="screenshotPrev" class="btn btn-blue" type="button">◀</button>
+              <img id="screenshotImage" class="screenshot-main" src="" alt="Screenshot" />
+              <button id="screenshotNext" class="btn btn-blue" type="button">▶</button>
+            </div>
+            <div id="screenshotThumbs" class="screenshot-thumbs"></div>
+          </section>
+
+          <aside class="game-sidebar card">
+            <h3>Game Info</h3>
+            <p><strong>Metacritic:</strong> <span id="metacriticScore">N/A</span></p>
+            <p><strong>Developer:</strong> <span id="gameDeveloper">N/A</span></p>
+            <p><strong>Publisher:</strong> <span id="gamePublisher">N/A</span></p>
+            <p><strong>Release Date:</strong> <span id="gameReleaseDate">N/A</span></p>
+            <p><strong>Genre:</strong> <span id="gameGenre">N/A</span></p>
+            <div>
+              <strong>Tags:</strong>
+              <div id="gameTags" class="tag-list"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <section class="section-head related-head"><h2>Related Games</h2></section>
+      <section id="relatedGames" class="games-grid"></section>
+
+      <section id="gameNotFound" class="empty-state hidden">Game not found.</section>
+    </main>
+
+    <div id="lightboxModal" class="modal hidden">
+      <div class="modal-content lightbox-content card">
+        <button id="lightboxClose" class="btn btn-red" type="button">Close</button>
+        <img id="lightboxImage" class="lightbox-image" src="" alt="Screenshot full" />
+      </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/game.js"></script>
+  </body>
+</html>

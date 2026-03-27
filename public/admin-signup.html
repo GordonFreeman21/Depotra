@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Depotra - Admin Signup</title>
+    <link rel="icon" type="image/png" href="favicon/favicon.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="auth-page">
+    <main class="auth-card card">
+      <div class="auth-logo-wrap">
+        <img class="logo-img" src="logo.svg" alt="Depotra Logo" />
+      </div>
+      <h1>Create Admin Account</h1>
+      <p id="authRequiredMessage" class="warning-text hidden">
+        You must be logged in as an admin to create new admin accounts
+      </p>
+
+      <form id="signupForm" class="form-stack">
+        <input id="signupUsername" class="input" type="text" placeholder="Username" required />
+        <input id="signupPassword" class="input" type="password" placeholder="Password" required />
+        <input id="confirmPassword" class="input" type="password" placeholder="Confirm Password" required />
+        <button class="btn btn-green" type="submit">Create Admin</button>
+      </form>
+
+      <p id="signupMessage" class="muted"></p>
+      <a class="muted" href="admin-login.html">Back to Login</a>
+    </main>
+
+    <script src="js/storage.js"></script>
+    <script src="js/admin-signup.js"></script>
+  </body>
+</html>
