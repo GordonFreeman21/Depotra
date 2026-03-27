@@ -147,3 +147,24 @@ async function hydrateGamesFromApi() {
 }
 
 window.depotraStorage.hydrateGamesFromApi = hydrateGamesFromApi;
+
+async function refreshGamesFromApi() {
+  try {
+    const response = await fetch('/api/games');
+    if (!response.ok) {
+      return;
+    }
+    const games = await response.json();
+    if (!Array.isArray(games)) {
+      return;
+    }
+    const db = getDatabase();
+    db.games = games;
+    setDatabase(db);
+    localStorage.setItem('depotra_seeded_games', '1');
+  } catch {
+    // ignore refresh errors
+  }
+}
+
+window.depotraStorage.refreshGamesFromApi = refreshGamesFromApi;
