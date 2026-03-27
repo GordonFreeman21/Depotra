@@ -170,7 +170,7 @@ async function fetchSteamDetails(appid) {
     throw new Error('Invalid Steam App ID');
   }
 
-  const response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${encodeURIComponent(appIdValue)}`);
+  const response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${encodeURIComponent(appIdValue)}&l=english&cc=US`);
   if (!response.ok) {
     throw new Error('Steam API request failed');
   }
