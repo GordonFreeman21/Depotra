@@ -15,6 +15,7 @@
       </a>
       <div class="nav-controls">
         <span class="muted" id="adminIdentity">Logged in as <strong id="adminUsername">admin</strong></span>
+        <button id="createAdminBtn" class="btn btn-purple" type="button">+ Create Admin</button>
         <button id="logoutBtn" class="btn btn-red" type="button">Logout</button>
       </div>
     </header>
@@ -40,14 +41,27 @@
       </section>
 
       <section class="dashboard-controls">
-        <input id="dashboardSearch" class="input" type="text" placeholder="Search games..." />
-        <button id="addGameBtn" class="btn btn-green" type="button">Add New Game</button>
+        <input id="dashboardSearch" class="input" type="text" placeholder="Search games…" />
+        <div class="filter-btns" role="group" aria-label="Filter by status">
+          <button class="btn filter-btn active" data-filter="all" type="button">All</button>
+          <button class="btn filter-btn" data-filter="featured" type="button">Featured</button>
+          <button class="btn filter-btn" data-filter="complete" type="button">Complete</button>
+          <button class="btn filter-btn" data-filter="draft" type="button">Draft</button>
+        </div>
+        <div class="control-actions">
+          <button id="exportCsvBtn" class="btn btn-blue" type="button">Export CSV</button>
+          <button id="bulkDeleteBtn" class="btn btn-red hidden" type="button">
+            Delete Selected (<span id="bulkCount">0</span>)
+          </button>
+          <button id="addGameBtn" class="btn btn-green" type="button">Add New Game</button>
+        </div>
       </section>
 
       <section class="card table-wrap">
         <table class="game-table">
           <thead>
             <tr>
+              <th class="col-check"><input type="checkbox" id="selectAll" title="Select all" /></th>
               <th>Image</th>
               <th><button class="sort-btn" data-sort="title" type="button">Title</button></th>
               <th><button class="sort-btn" data-sort="genre" type="button">Genre</button></th>
@@ -62,11 +76,12 @@
       </section>
     </main>
 
-    <div id="gameModal" class="modal side-modal hidden">
+    <!-- ── Game Editor Modal ── -->
+    <div id="gameModal" class="modal side-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-content card side-panel">
         <div class="modal-header">
           <h2 id="modalTitle">Game Editor</h2>
-          <button id="closeModalBtn" class="btn btn-red" type="button">X</button>
+          <button id="closeModalBtn" class="btn btn-red" type="button">✕</button>
         </div>
 
         <form id="gameForm" class="form-grid">
@@ -99,6 +114,37 @@
             <button id="cancelModalBtn" class="btn btn-blue" type="button">Cancel</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- ── Create Admin Modal ── -->
+    <div id="createAdminModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="createAdminTitle">
+      <div class="modal-content card" style="width:min(460px,100%)">
+        <div class="modal-header">
+          <h2 id="createAdminTitle">Create Admin Account</h2>
+          <button id="closeAdminModalBtn" class="btn btn-red" type="button">✕</button>
+        </div>
+        <form id="createAdminForm" class="form-stack">
+          <input id="newAdminUsername" class="input" type="text" placeholder="Username" autocomplete="off" required />
+          <input id="newAdminPassword" class="input" type="password" placeholder="Password (min 6 characters)" required minlength="6" />
+          <input id="newAdminConfirmPassword" class="input" type="password" placeholder="Confirm Password" required />
+          <p id="createAdminMessage" class="muted" style="text-align:center;min-height:22px"></p>
+          <div class="modal-actions">
+            <button class="btn btn-green" type="submit">Create Admin</button>
+            <button id="cancelAdminModalBtn" class="btn btn-blue" type="button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Confirm Dialog Modal ── -->
+    <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-content card confirm-dialog">
+        <p id="confirmMessage" class="confirm-message"></p>
+        <div class="modal-actions">
+          <button id="confirmOkBtn" class="btn btn-red" type="button">Delete</button>
+          <button id="confirmCancelBtn" class="btn btn-blue" type="button">Cancel</button>
+        </div>
       </div>
     </div>
 
