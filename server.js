@@ -534,6 +534,62 @@ app.get('/api/steam/details/:appid', async (req, res) => {
   }
 });
 
+app.get('/api/download/:id', async (req, res) => {
+  try {
+    const gameId = sanitizeString(req.params.id, 100);
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1 LIMIT 1', [gameId]);
+    const game = gameResult.rows[0] ? mapGameRow(gameResult.rows[0]) : null;
+    if (!game) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+
+    if (!game.downloadLink) {
+      return res.status(404).json({ message: 'No download link available' });
+    }
+
+    const fileResponse = await fetch(game.downloadLink);
+    if (!fileResponse.ok) {
+      return res.status(502).json({ message: 'Failed to fetch download' });
+    }
+
+    const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
+    let ext = '';
+    try {
+      const urlExt = path.extname(new URL(game.downloadLink).pathname);
+      if (urlExt) {
+        ext = urlExt;
+      }
+    } catch {
+      // ignore URL parse errors
+    }
+
+    const safeTitle = (game.title || 'Game').replace(/[/\\?%*:|"<>]/g, '-').trim();
+    const filename = safeTitle + ext;
+    const encodedFilename = encodeURIComponent(filename);
+
+    res.setHeader('Content-Disposition', `attachment; filename="${filename.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"; filename*=UTF-8''${encodedFilename}`);
+    res.setHeader('Content-Type', contentType);
+
+    const contentLength = fileResponse.headers.get('content-length');
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+
+    fileResponse.body.on('error', () => {
+      if (!res.headersSent) {
+        res.status(502).json({ message: 'Error streaming download' });
+      } else {
+        res.destroy();
+      }
+    });
+    fileResponse.body.pipe(res);
+    return undefined;
+  } catch (err) {
+    console.error('Download proxy error:', err);
+    return res.status(500).json({ message: 'Server error during download' });
+  }
+});
+
 app.use(express.static(PUBLIC_PATH));
 
 app.get('/', (req, res) => {
