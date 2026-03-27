@@ -122,7 +122,7 @@ function renderGame(game) {
   byId('gameHeaderImage').src = game.imageUrl || '';
   byId('gameHeaderImage').alt = game.title || 'Game Banner';
   byId('gameTitle').textContent = game.title || 'Untitled';
-  byId('downloadBtn').href = game.downloadLink || '#';
+  byId('downloadBtn').href = game.downloadLink ? `/api/download/${encodeURIComponent(game.id)}` : '#';
   byId('gameDescription').innerHTML = formatSteamRichText(game.description) || 'No description available.';
   quickMeta.innerHTML = `
     <span class="tag">${escapeHtml(game.genre || 'Unknown')}</span>
