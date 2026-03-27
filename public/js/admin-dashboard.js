@@ -30,6 +30,8 @@ const dashboardSearch = document.getElementById('dashboardSearch');
 const dashboardEmpty = document.getElementById('dashboardEmpty');
 const toastContainer = document.getElementById('toastContainer');
 const sortButtons = Array.from(document.querySelectorAll('.sort-btn'));
+const fetchSteamBtn = document.getElementById('fetchSteamBtn');
+const dashboardLoading = document.getElementById('dashboardLoading');
 
 const totalGames = document.getElementById('totalGames');
 const featuredGames = document.getElementById('featuredGames');
@@ -210,6 +212,49 @@ addGameBtn.addEventListener('click', () => {
 
 closeModalBtn.addEventListener('click', closeModal);
 cancelModalBtn.addEventListener('click', closeModal);
+
+fetchSteamBtn.addEventListener('click', async () => {
+  const appId = document.getElementById('steamAppId').value.trim();
+  if (!appId) {
+    showToast('Please enter a Steam App ID', 'error');
+    return;
+  }
+
+  dashboardLoading.classList.remove('hidden');
+  try {
+    const response = await fetch(`/api/steam/details/${encodeURIComponent(appId)}`);
+    if (!response.ok) {
+      let msg = 'Failed to fetch Steam data';
+      try {
+        const err = await response.json();
+        msg = err.message || msg;
+      } catch { /* ignore */ }
+      showToast(msg, 'error');
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.title) document.getElementById('title').value = data.title;
+    if (data.description || data.shortDescription) {
+      document.getElementById('description').value = data.description || data.shortDescription;
+    }
+    if (data.imageUrl) document.getElementById('imageUrl').value = data.imageUrl;
+    if (data.genre) document.getElementById('genre').value = data.genre;
+    if (data.developer) document.getElementById('developer').value = data.developer;
+    if (data.publisher) document.getElementById('publisher').value = data.publisher;
+    if (data.releaseDate) document.getElementById('releaseDate').value = data.releaseDate;
+    if (Array.isArray(data.genres) && data.genres.length) {
+      document.getElementById('tags').value = data.genres.join(', ');
+    }
+
+    showToast('Steam data loaded!');
+  } catch {
+    showToast('Error fetching Steam data', 'error');
+  } finally {
+    dashboardLoading.classList.add('hidden');
+  }
+});
 
 gameForm.addEventListener('submit', (event) => {
   event.preventDefault();
