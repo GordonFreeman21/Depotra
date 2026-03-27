@@ -85,28 +85,28 @@
         </div>
 
         <form id="gameForm" class="form-grid">
-          <input id="gameId" type="hidden" />
+          <input id="gameId" name="gameId" type="hidden" />
 
           <label>
             Steam App ID (optional)
             <div class="inline-row">
-              <input id="steamAppId" class="input" type="text" placeholder="e.g. 730" />
+              <input id="steamAppId" name="steamAppId" class="input" type="text" placeholder="e.g. 730" />
               <button id="fetchSteamBtn" class="btn btn-blue" type="button">Fetch from Steam</button>
             </div>
           </label>
 
-          <label>Title<input id="title" class="input" type="text" required /></label>
-          <label>Description<textarea id="description" class="input textarea" required></textarea></label>
-          <label>Image URL<input id="imageUrl" class="input" type="url" /></label>
-          <label>Direct Download Link<input id="downloadLink" class="input" type="url" required /></label>
-          <label>Genre<input id="genre" class="input" type="text" /></label>
-          <label>Developer<input id="developer" class="input" type="text" /></label>
-          <label>Publisher<input id="publisher" class="input" type="text" /></label>
-          <label>Release Date<input id="releaseDate" class="input" type="text" placeholder="YYYY-MM-DD or Steam date" /></label>
-          <label>Tags (comma separated)<input id="tags" class="input" type="text" placeholder="action, adventure" /></label>
+          <label>Title<input id="title" name="title" class="input" type="text" required /></label>
+          <label>Description<textarea id="description" name="description" class="input textarea" required></textarea></label>
+          <label>Image URL<input id="imageUrl" name="imageUrl" class="input" type="url" /></label>
+          <label>Direct Download Link<input id="downloadLink" name="downloadLink" class="input" type="url" required /></label>
+          <label>Genre<input id="genre" name="genre" class="input" type="text" /></label>
+          <label>Developer<input id="developer" name="developer" class="input" type="text" /></label>
+          <label>Publisher<input id="publisher" name="publisher" class="input" type="text" /></label>
+          <label>Release Date<input id="releaseDate" name="releaseDate" class="input" type="text" placeholder="YYYY-MM-DD or Steam date" /></label>
+          <label>Tags (comma separated)<input id="tags" name="tags" class="input" type="text" placeholder="action, adventure" /></label>
 
           <label class="checkbox-row">
-            <input id="featured" type="checkbox" /> Featured Game
+            <input id="featured" name="featured" type="checkbox" /> Featured Game
           </label>
 
           <div class="modal-actions">
