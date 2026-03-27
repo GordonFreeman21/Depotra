@@ -76,7 +76,7 @@ function activateTab(tabName) {
 }
 
 function renderRelated(currentGame) {
-  const allGames = window.vaporStorage.listGames();
+  const allGames = window.depotraStorage.listGames();
   const currentTags = new Set(Array.isArray(currentGame.tags) ? currentGame.tags : []);
   const related = allGames
     .filter((item) => item.id !== currentGame.id)
@@ -200,14 +200,14 @@ function renderGame(game) {
 }
 
 async function init() {
-  await window.vaporStorage.hydrateGamesFromApi();
+  await window.depotraStorage.hydrateGamesFromApi();
 
   if (!gameId) {
     renderNotFound();
     return;
   }
 
-  const game = window.vaporStorage.findGameById(gameId);
+  const game = window.depotraStorage.findGameById(gameId);
   if (!game) {
     renderNotFound();
     return;

@@ -20,14 +20,14 @@ document.getElementById('signupForm').addEventListener('submit', function (e) {
     return;
   }
 
-  const existing = window.vaporStorage.findAdmin(username);
+  const existing = window.depotraStorage.findAdmin(username);
   if (existing) {
     message.textContent = 'Username already exists.';
     message.className = 'error-text';
     return;
   }
 
-  window.vaporStorage.addAdmin({
+  window.depotraStorage.addAdmin({
     id: crypto.randomUUID(),
     username,
     password, // NOTE: Insecure, for demo only!

@@ -22,7 +22,7 @@ function escapeHtml(value) {
 }
 
 function getGames() {
-  return window.vaporStorage.listGames();
+  return window.depotraStorage.listGames();
 }
 
 function getGenres(games) {
@@ -167,7 +167,7 @@ function refresh() {
 
 async function init() {
   showSkeletons();
-  await window.vaporStorage.hydrateGamesFromApi();
+  await window.depotraStorage.hydrateGamesFromApi();
   hideSkeletons();
   refresh();
 
