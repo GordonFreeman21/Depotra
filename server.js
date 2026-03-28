@@ -104,6 +104,10 @@ function mapGameRow(row) {
     releaseDate: row.release_date || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     featured: row.featured === true,
+    onlineFix: row.online_fix === true,
+    onlineFixLink: row.online_fix_link || '',
+    genericFix: row.generic_fix === true,
+    genericFixLink: row.generic_fix_link || '',
     uploadedBy: row.uploaded_by,
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at
@@ -139,11 +143,20 @@ async function initializeDatabase() {
       release_date TEXT,
       tags TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
       featured BOOLEAN NOT NULL DEFAULT FALSE,
+      online_fix BOOLEAN NOT NULL DEFAULT FALSE,
+      online_fix_link TEXT,
+      generic_fix BOOLEAN NOT NULL DEFAULT FALSE,
+      generic_fix_link TEXT,
       uploaded_by TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS online_fix BOOLEAN NOT NULL DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS online_fix_link TEXT`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS generic_fix BOOLEAN NOT NULL DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS generic_fix_link TEXT`);
 
   await pool.query('CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at DESC)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_games_featured ON games(featured)');
@@ -230,6 +243,10 @@ function mergeGameWithSteam(body, steamData, existing = null) {
   const releaseDate = sanitizeString(body.releaseDate || fallback.releaseDate || steamData?.releaseDate || '', 100);
   const tags = sanitizeTags(body.tags ?? fallback.tags ?? steamData?.genres ?? []);
   const featured = body.featured === true || body.featured === 'true' || body.featured === 'on' || fallback.featured === true;
+  const onlineFix = body.onlineFix === true || body.onlineFix === 'true' || body.onlineFix === 'on' || body.onlineFix === 'yes' || fallback.onlineFix === true;
+  const onlineFixLink = sanitizeUrl(body.onlineFixLink || fallback.onlineFixLink || '');
+  const genericFix = body.genericFix === true || body.genericFix === 'true' || body.genericFix === 'on' || body.genericFix === 'yes' || fallback.genericFix === true;
+  const genericFixLink = sanitizeUrl(body.genericFixLink || fallback.genericFixLink || '');
   const steamAppId = sanitizeString(body.steamAppId || fallback.steamAppId || steamData?.steamAppId || '', 20);
 
   return {
@@ -244,7 +261,11 @@ function mergeGameWithSteam(body, steamData, existing = null) {
     publisher,
     releaseDate,
     tags,
-    featured
+    featured,
+    onlineFix,
+    onlineFixLink,
+    genericFix,
+    genericFixLink
   };
 }
 
@@ -389,9 +410,11 @@ app.post('/api/admin/games', authMiddleware, async (req, res) => {
       `
         INSERT INTO games (
           id, title, description, image_url, download_link, steam_app_id, steam_data,
-          genre, developer, publisher, release_date, tags, featured, uploaded_by, created_at, updated_at
+          genre, developer, publisher, release_date, tags, featured,
+          online_fix, online_fix_link, generic_fix, generic_fix_link,
+          uploaded_by, created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12::text[], $13, $14, $15::timestamptz, $16::timestamptz)
+        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12::text[], $13, $14, $15, $16, $17, $18, $19::timestamptz, $20::timestamptz)
       `,
       [
         game.id,
@@ -407,6 +430,10 @@ app.post('/api/admin/games', authMiddleware, async (req, res) => {
         game.releaseDate,
         Array.isArray(game.tags) ? game.tags : [],
         game.featured === true,
+        game.onlineFix === true,
+        game.onlineFixLink || null,
+        game.genericFix === true,
+        game.genericFixLink || null,
         game.uploadedBy,
         game.createdAt,
         game.updatedAt
@@ -467,7 +494,11 @@ app.put('/api/admin/games/:id', authMiddleware, async (req, res) => {
           release_date = $11,
           tags = $12::text[],
           featured = $13,
-          updated_at = $14::timestamptz
+          online_fix = $14,
+          online_fix_link = $15,
+          generic_fix = $16,
+          generic_fix_link = $17,
+          updated_at = $18::timestamptz
         WHERE id = $1
       `,
       [
@@ -484,6 +515,10 @@ app.put('/api/admin/games/:id', authMiddleware, async (req, res) => {
         updatedGame.releaseDate,
         Array.isArray(updatedGame.tags) ? updatedGame.tags : [],
         updatedGame.featured === true,
+        updatedGame.onlineFix === true,
+        updatedGame.onlineFixLink || null,
+        updatedGame.genericFix === true,
+        updatedGame.genericFixLink || null,
         updatedGame.updatedAt
       ]
     );
