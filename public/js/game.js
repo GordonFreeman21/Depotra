@@ -47,7 +47,7 @@ function sanitizeRichTextHtml(html) {
   const template = document.createElement('template');
   template.innerHTML = html;
 
-  const allowedTags = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'I', 'EM', 'SPAN', 'IMG', 'H2', 'H3', 'VIDEO', 'SOURCE']);
+  const allowedTags = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'I', 'EM', 'SPAN', 'A', 'IMG', 'H2', 'H3', 'VIDEO', 'SOURCE']);
   const dangerousTags = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META']);
 
   function sanitizeNode(node) {
@@ -145,6 +145,24 @@ function sanitizeRichTextHtml(html) {
       }
 
       if ((node.tagName === 'H2' || node.tagName === 'H3') && name === 'class') {
+        return;
+      }
+
+      if (node.tagName === 'A') {
+        if (name === 'href') {
+          if (!isSafeRichTextUrl(value)) {
+            removedElement = true;
+            node.remove();
+            return;
+          }
+          node.setAttribute('rel', 'noopener noreferrer');
+          node.setAttribute('target', '_blank');
+          return;
+        }
+        if (name === 'class' || name === 'rel' || name === 'target') {
+          return;
+        }
+        node.removeAttribute(attribute.name);
         return;
       }
 

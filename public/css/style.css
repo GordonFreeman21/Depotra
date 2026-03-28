@@ -50,7 +50,6 @@ body {
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.06) 0%, transparent 60%),
     radial-gradient(ellipse 50% 40% at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
-  background-attachment: fixed;
 }
 
 a {
@@ -83,13 +82,15 @@ img {
   justify-content: space-between;
   padding: 14px 5%;
   background: rgba(7, 12, 22, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 1px 0 rgba(0, 212, 255, 0.08), 0 4px 24px rgba(0, 0, 0, 0.5);
   position: sticky;
   top: 0;
   z-index: 30;
   border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .logo {
@@ -170,7 +171,7 @@ img {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-size: 0.82rem;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   position: relative;
   overflow: hidden;
 }
@@ -250,6 +251,11 @@ img {
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
   background-size: cover;
   background-position: center;
+  display: none;
+}
+
+.hero-slide.active {
+  display: block;
 }
 
 .hero-content {
@@ -330,6 +336,7 @@ img {
   flex-direction: column;
   border: 1px solid var(--border);
   will-change: transform;
+  contain: layout style;
 }
 
 .game-card:hover {
@@ -587,6 +594,23 @@ img {
   display: block;
 }
 
+.rich-text img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.rich-text a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.rich-text a:hover {
+  color: var(--accent-hover);
+}
+
 .game-sidebar p {
   margin: 10px 0;
   display: flex;
@@ -774,10 +798,8 @@ img {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
-
-.filter-btn:hover {
   border-color: rgba(0, 212, 255, 0.3);
   color: var(--text);
 }
@@ -975,10 +997,8 @@ img {
   border: none;
   background: rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, width 0.3s ease, box-shadow 0.3s ease;
 }
-
-.hero-dot.active {
   width: 28px;
   background: linear-gradient(90deg, var(--accent), var(--purple));
   box-shadow: 0 0 10px var(--accent-glow);
@@ -1076,7 +1096,7 @@ img {
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .tab-btn:hover {
@@ -1370,7 +1390,7 @@ img {
   color: var(--text-muted);
   padding: 7px 12px;
   font-size: 0.78rem;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-copy:hover {
@@ -1421,3 +1441,14 @@ img {
   line-height: 1.6;
 }
 
+
+/* ─── REDUCED MOTION ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
