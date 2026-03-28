@@ -27,36 +27,163 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function isSafeRichTextUrl(value) {
+  try {
+    const url = new URL(String(value || ''), window.location.origin);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeRichTextHtml(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html;
+
+  const allowedTags = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'I', 'EM', 'SPAN', 'IMG']);
+  const dangerousTags = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META']);
+
+  function sanitizeNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      node.remove();
+      return;
+    }
+
+    if (dangerousTags.has(node.tagName)) {
+      node.remove();
+      return;
+    }
+
+    if (!allowedTags.has(node.tagName)) {
+      const children = Array.from(node.childNodes);
+      const fragment = document.createDocumentFragment();
+      children.forEach((child) => fragment.appendChild(child));
+      node.replaceWith(fragment);
+      children.forEach(sanitizeNode);
+      return;
+    }
+
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value;
+
+      if (name.startsWith('on')) {
+        node.removeAttribute(attribute.name);
+        return;
+      }
+
+      if (node.tagName === 'IMG') {
+        if (name === 'src') {
+          if (!isSafeRichTextUrl(value)) {
+            node.remove();
+            return;
+          }
+          return;
+        }
+        if (name === 'alt' || name === 'title' || name === 'class') {
+          return;
+        }
+        if ((name === 'width' || name === 'height') && /^\d{1,4}$/.test(value)) {
+          return;
+        }
+        node.removeAttribute(attribute.name);
+        return;
+      }
+
+      if ((node.tagName === 'SPAN' || node.tagName === 'UL' || node.tagName === 'OL') && name === 'class') {
+        return;
+      }
+
+      node.removeAttribute(attribute.name);
+    });
+
+    Array.from(node.childNodes).forEach(sanitizeNode);
+  }
+
+  Array.from(template.content.childNodes).forEach(sanitizeNode);
+
+  template.content.querySelectorAll('ul, ol').forEach((list) => {
+    let pendingItem = null;
+
+    const flushPendingItem = (beforeNode = null) => {
+      if (!pendingItem || !pendingItem.childNodes.length) {
+        pendingItem = null;
+        return;
+      }
+      if (beforeNode) {
+        list.insertBefore(pendingItem, beforeNode);
+      } else {
+        list.appendChild(pendingItem);
+      }
+      pendingItem = null;
+    };
+
+    Array.from(list.childNodes).forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE && !child.textContent.trim()) {
+        child.remove();
+        return;
+      }
+
+      if (child.nodeType === Node.ELEMENT_NODE && child.tagName === 'LI') {
+        flushPendingItem(child);
+        return;
+      }
+
+      if (!pendingItem) {
+        pendingItem = document.createElement('li');
+      }
+      pendingItem.appendChild(child);
+    });
+
+    flushPendingItem();
+  });
+
+  return template.innerHTML;
+}
+
+function normalizeBrokenSteamMarkup(value) {
+  let text = String(value || '').trim();
+  if (!text || /<[^>]+>/.test(text)) {
+    return text;
+  }
+
+  text = text.replace(/\r?\n/g, '__BR__');
+  text = text.replace(/brbr/gi, '__BR____BR__');
+  text = text.replace(/\bbr\b/gi, '__BR__');
+  text = text.replace(/br(?=(?:ul|ol|li|p|strong|b|i|em|span|\/|[A-Z]))/g, '__BR__');
+  text = text.replace(
+    /span\s+class="([^"]*)"\s*img\s+class="([^"]*)"\s+src="([^"]+)"(?:\s+width=(\d+))?(?:\s+height=(\d+))?\s*\/\/span/gi,
+    (_, spanClass, imgClass, src, width, height) => `<span class="${spanClass}"><img class="${imgClass}" src="${src}"${width ? ` width="${width}"` : ''}${height ? ` height="${height}"` : ''} /></span>`
+  );
+
+  let previous = '';
+  while (text !== previous) {
+    previous = text;
+    text = text.replace(/(^|[^<])\/{1,2}(strong|ul|ol|li|p|b|i|em|span)/gi, '$1</$2>');
+    text = text.replace(/(^|__BR__)(ul|ol)\s+class="([^"]*)"/gi, '$1<$2 class="$3">');
+    text = text.replace(/(^|__BR__|<\/li>|<\/ul>|<\/ol>|<ul[^>]*>|<ol[^>]*>)(li|p|strong|b|i|em|span)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
+    text = text.replace(/(^|<li>|<p>|__BR__|<\/strong>|<\/b>|<\/i>|<\/em>)(strong|b|i|em)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
+  }
+
+  text = text.replace(/(__BR__){3,}/gi, '__BR____BR__');
+  text = text.replace(/__BR__(<\/li>)/gi, '$1');
+  text = text.replace(/(<li>)__BR__/gi, '$1');
+  text = text.replace(/__BR__/gi, '<br>');
+
+  return text;
+}
+
 function formatSteamRichText(value) {
   const raw = String(value || '');
   if (!raw) {
     return '';
   }
 
-  if (raw.includes('<')) {
-    return raw;
-  }
-
-  let text = raw;
-
-  text = text.replace(/\r?\n/g, 'br');
-  text = text.replace(/\/strong/gi, '</strong>');
-  text = text.replace(/\/ul/gi, '</ul>');
-  text = text.replace(/\/li/gi, '</li>');
-  text = text.replace(/\/p/gi, '</p>');
-  text = text.replace(/\/b/gi, '</b>');
-  text = text.replace(/\/i/gi, '</i>');
-  text = text.replace(/\/em/gi, '</em>');
-  text = text.replace(/ul\s+class="([^"]*)"/gi, '<ul class="$1">');
-  text = text.replace(/(^|<\/li>|<ul[^>]*>|br)li/gi, '$1<li>');
-  text = text.replace(/(^|<li>|br)strong/gi, '$1<strong>');
-  text = text.replace(/(^|br)p(?=[A-Z<])/g, '$1<p>');
-  text = text.replace(/br/gi, '<br>');
-  text = text.replace(/<br><br>/g, '<br>');
-  text = text.replace(/<br>(<\/li>)/gi, '$1');
-  text = text.replace(/(<li>)<br>/gi, '$1');
-
-  return text;
+  return sanitizeRichTextHtml(normalizeBrokenSteamMarkup(raw));
 }
 
 function renderNotFound() {
@@ -119,10 +246,20 @@ function closeLightbox() {
 }
 
 function renderGame(game) {
+  const downloadBtn = byId('downloadBtn');
+
   byId('gameHeaderImage').src = game.imageUrl || '';
   byId('gameHeaderImage').alt = game.title || 'Game Banner';
   byId('gameTitle').textContent = game.title || 'Untitled';
-  byId('downloadBtn').href = game.downloadLink ? `/api/download/${encodeURIComponent(game.id)}` : '#';
+  if (game.downloadLink) {
+    downloadBtn.href = `/api/download/${encodeURIComponent(game.id)}`;
+    downloadBtn.removeAttribute('aria-disabled');
+    downloadBtn.removeAttribute('title');
+  } else {
+    downloadBtn.removeAttribute('href');
+    downloadBtn.setAttribute('aria-disabled', 'true');
+    downloadBtn.title = 'No download link available for this game yet.';
+  }
   byId('gameDescription').innerHTML = formatSteamRichText(game.description) || 'No description available.';
   quickMeta.innerHTML = `
     <span class="tag">${escapeHtml(game.genre || 'Unknown')}</span>

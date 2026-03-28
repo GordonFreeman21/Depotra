@@ -47,6 +47,13 @@ function sanitizeString(value, maxLength = 10000) {
   return value.replace(/[<>]/g, '').trim().slice(0, maxLength);
 }
 
+function sanitizeRichText(value, maxLength = 20000) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value.trim().slice(0, maxLength);
+}
+
 function sanitizeUrl(value) {
   const sanitized = sanitizeString(value, 2000);
   if (!sanitized) {
@@ -192,7 +199,7 @@ async function fetchSteamDetails(appid) {
     steamAppId: appIdValue,
     title: sanitizeString(steam.name, 200),
     shortDescription: sanitizeString(steam.short_description, 1000),
-    description: sanitizeString(steam.detailed_description, 15000),
+    description: sanitizeRichText(steam.detailed_description, 15000),
     imageUrl: sanitizeUrl(steam.header_image) || PLACEHOLDER_IMAGE,
     genres,
     genre: genres.join(', '),
@@ -201,7 +208,7 @@ async function fetchSteamDetails(appid) {
     releaseDate: sanitizeString(steam.release_date?.date || '', 100),
     screenshots,
     metacritic: steam.metacritic?.score || null,
-    systemRequirements: sanitizeString(steam.pc_requirements?.minimum || '', 8000),
+    systemRequirements: sanitizeRichText(steam.pc_requirements?.minimum || '', 8000),
     website: sanitizeUrl(steam.website || ''),
     categories: Array.isArray(steam.categories) ? steam.categories.map((c) => sanitizeString(c.description, 100)).filter(Boolean) : []
   };
@@ -211,7 +218,7 @@ function mergeGameWithSteam(body, steamData, existing = null) {
   const fallback = existing || {};
 
   const title = sanitizeString(body.title || fallback.title || steamData?.title || '', 200);
-  const description = sanitizeString(body.description || fallback.description || steamData?.description || steamData?.shortDescription || '', 20000);
+  const description = sanitizeRichText(body.description || fallback.description || steamData?.description || steamData?.shortDescription || '', 20000);
   const imageUrl = sanitizeUrl(body.imageUrl || fallback.imageUrl || steamData?.imageUrl || '') || PLACEHOLDER_IMAGE;
   const downloadLink = sanitizeUrl(body.downloadLink || fallback.downloadLink || '');
   const genre = sanitizeString(body.genre || fallback.genre || steamData?.genre || '', 150);
