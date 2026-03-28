@@ -191,6 +191,13 @@ img {
   transform: scale(0.97);
 }
 
+.btn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+
 .btn-blue {
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
   box-shadow: 0 2px 12px rgba(14, 165, 233, 0.3);
