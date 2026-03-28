@@ -12,6 +12,14 @@ let heroTimer = null;
 let heroIndex = 0;
 let heroGames = [];
 
+function debounce(fn, delay) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -140,7 +148,7 @@ function renderGames(games) {
     const tags = Array.isArray(game.tags) ? game.tags.slice(0, 3) : [];
     return `
       <article class="game-card">
-        <img class="game-card-image" src="${escapeHtml(game.imageUrl || '')}" alt="${escapeHtml(game.title || 'Game')}" />
+        <img class="game-card-image" src="${escapeHtml(game.imageUrl || '')}" alt="${escapeHtml(game.title || 'Game')}" loading="lazy" />
         <div class="game-card-body">
           <h3 class="game-card-title">${escapeHtml(game.title)}</h3>
           <div class="meta-row">
@@ -171,7 +179,7 @@ async function init() {
   hideSkeletons();
   refresh();
 
-  searchInput.addEventListener('input', refresh);
+  searchInput.addEventListener('input', debounce(refresh, 300));
   genreFilter.addEventListener('change', refresh);
   heroDots.addEventListener('click', (event) => {
     const target = event.target.closest('[data-hero-index]');
