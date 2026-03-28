@@ -242,6 +242,8 @@ function normalizeBrokenSteamMarkup(value) {
     }
   );
 
+  // Run this after video/image block extraction so URLs inside those blocks
+  // (which may contain 'br' substrings) are already replaced by safe tokens.
   text = text.replace(/(?<![a-zA-Z])br(?![a-z])/g, '__BR__');
 
   let previous = '';
@@ -251,6 +253,7 @@ function normalizeBrokenSteamMarkup(value) {
     previous = text;
     text = text.replace(/(^|[^<])(\/{1,2})(strong|ul|ol|li|p|b|i|em|span|h2|h3)/gi, '$1</$3>');
     text = text.replace(/(^|__BR__)(ul|ol)\s+class="([^"]*)"/gi, (_, prefix, tag, className) => `${prefix}<${tag} class="${escapeHtmlAttribute(className)}">`);
+    // __STEAM_VIDEO_N__ and __STEAM_IMG_N__ tokens mark positions of extracted blocks
     text = text.replace(/(^|__BR__|__STEAM_VIDEO_\d+__|__STEAM_IMG_\d+__)(h[23])\s+class="([^"]*)"/gi, (_, prefix, tag, className) => `${prefix}<${tag} class="${escapeHtmlAttribute(className)}">`);
     text = text.replace(/(^|__BR__|__STEAM_VIDEO_\d+__|__STEAM_IMG_\d+__|<\/h[23]>)(h[23])(?=[A-Za-z0-9 \u2022])/gi, '$1<$2>');
     text = text.replace(/(^|__BR__|<\/li>|<\/ul>|<\/ol>|<ul[^>]*>|<ol[^>]*>)(li|p|strong|b|i|em|span)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
