@@ -155,6 +155,8 @@ function closeModal() {
   gameModal.classList.add('hidden');
   gameForm.reset();
   document.getElementById('gameId').value = '';
+  document.getElementById('onlineFixLinkRow').classList.add('hidden');
+  document.getElementById('genericFixLinkRow').classList.add('hidden');
 }
 
 function getGames() {
@@ -177,7 +179,11 @@ async function saveGame(formData) {
     publisher: String(formData.get('publisher') || '').trim(),
     releaseDate: String(formData.get('releaseDate') || '').trim(),
     tags,
-    featured: formData.get('featured') === 'on'
+    featured: formData.get('featured') === 'on',
+    onlineFix: formData.get('onlineFix') === 'yes',
+    onlineFixLink: String(formData.get('onlineFixLink') || '').trim(),
+    genericFix: formData.get('genericFix') === 'yes',
+    genericFixLink: String(formData.get('genericFixLink') || '').trim()
   };
 
   const url = id ? `/api/admin/games/${encodeURIComponent(id)}` : '/api/admin/games';
@@ -220,6 +226,16 @@ function fillForm(game) {
   document.getElementById('releaseDate').value = game.releaseDate || '';
   document.getElementById('tags').value = Array.isArray(game.tags) ? game.tags.join(', ') : '';
   document.getElementById('featured').checked = Boolean(game.featured);
+
+  const onlineFixSelect = document.getElementById('onlineFix');
+  onlineFixSelect.value = game.onlineFix ? 'yes' : 'no';
+  document.getElementById('onlineFixLink').value = game.onlineFixLink || '';
+  document.getElementById('onlineFixLinkRow').classList.toggle('hidden', !game.onlineFix);
+
+  const genericFixSelect = document.getElementById('genericFix');
+  genericFixSelect.value = game.genericFix ? 'yes' : 'no';
+  document.getElementById('genericFixLink').value = game.genericFixLink || '';
+  document.getElementById('genericFixLinkRow').classList.toggle('hidden', !game.genericFix);
 }
 
 // ── Sort Indicators ───────────────────────────────────────────────────────────
@@ -346,12 +362,24 @@ logoutBtn.addEventListener('click', () => {
 addGameBtn.addEventListener('click', () => {
   gameForm.reset();
   document.getElementById('gameId').value = '';
+  document.getElementById('onlineFixLinkRow').classList.add('hidden');
+  document.getElementById('genericFixLinkRow').classList.add('hidden');
   document.getElementById('modalTitle').textContent = 'Add Game';
   openModal();
 });
 
 closeModalBtn.addEventListener('click', closeModal);
 cancelModalBtn.addEventListener('click', closeModal);
+
+// Show/hide Online Fix link field
+document.getElementById('onlineFix').addEventListener('change', function () {
+  document.getElementById('onlineFixLinkRow').classList.toggle('hidden', this.value !== 'yes');
+});
+
+// Show/hide Generic Fix link field
+document.getElementById('genericFix').addEventListener('change', function () {
+  document.getElementById('genericFixLinkRow').classList.toggle('hidden', this.value !== 'yes');
+});
 
 gameModal.addEventListener('click', (event) => {
   if (event.target === gameModal) closeModal();

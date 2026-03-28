@@ -109,6 +109,28 @@
             <input id="featured" name="featured" type="checkbox" /> Featured Game
           </label>
 
+          <label>
+            Online Fix Available
+            <select id="onlineFix" name="onlineFix" class="input">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
+          <div id="onlineFixLinkRow" class="hidden">
+            <label>Online Fix Download Link<input id="onlineFixLink" name="onlineFixLink" class="input" type="url" placeholder="https://..." /></label>
+          </div>
+
+          <label>
+            Generic Fix Available
+            <select id="genericFix" name="genericFix" class="input">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
+          <div id="genericFixLinkRow" class="hidden">
+            <label>Generic Fix Download Link<input id="genericFixLink" name="genericFixLink" class="input" type="url" placeholder="https://..." /></label>
+          </div>
+
           <div class="modal-actions">
             <button class="btn btn-green" type="submit">Save Game</button>
             <button id="cancelModalBtn" class="btn btn-blue" type="button">Cancel</button>

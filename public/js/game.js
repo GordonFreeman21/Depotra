@@ -439,6 +439,37 @@ function renderGame(game) {
   byId('metacriticScore').textContent = steamData.metacritic ?? 'N/A';
   byId('systemRequirements').innerHTML = formatSteamRichText(steamData.systemRequirements) || 'Not provided.';
 
+  const onlineFixSection = byId('onlineFixSection');
+  const genericFixSection = byId('genericFixSection');
+
+  if (game.onlineFix) {
+    byId('onlineFixStatus').textContent = 'Available';
+    const onlineFixBtn = byId('onlineFixBtn');
+    if (game.onlineFixLink) {
+      onlineFixBtn.href = game.onlineFixLink;
+      onlineFixBtn.classList.remove('hidden');
+    } else {
+      onlineFixBtn.classList.add('hidden');
+    }
+    onlineFixSection.classList.remove('hidden');
+  } else {
+    onlineFixSection.classList.add('hidden');
+  }
+
+  if (game.genericFix) {
+    byId('genericFixStatus').textContent = 'Available';
+    const genericFixBtn = byId('genericFixBtn');
+    if (game.genericFixLink) {
+      genericFixBtn.href = game.genericFixLink;
+      genericFixBtn.classList.remove('hidden');
+    } else {
+      genericFixBtn.classList.add('hidden');
+    }
+    genericFixSection.classList.remove('hidden');
+  } else {
+    genericFixSection.classList.add('hidden');
+  }
+
   renderRelated(game);
   activateTab('overview');
 
