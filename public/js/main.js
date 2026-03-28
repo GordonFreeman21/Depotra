@@ -80,9 +80,9 @@ function filterGames(games) {
   });
 }
 
-function buildHeroSlide(game) {
+function buildHeroSlide(game, isActive) {
   return `
-    <article class="hero-slide" style="background-image: linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.75)), url('${escapeHtml(game.imageUrl || '')}')">
+    <article class="hero-slide${isActive ? ' active' : ''}" style="background-image: linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.75)), url('${escapeHtml(game.imageUrl || '')}')">
       <div class="hero-content">
         <div>
           <h2>${escapeHtml(game.title || 'Featured Game')}</h2>
@@ -96,14 +96,18 @@ function buildHeroSlide(game) {
 
 function setHero(index) {
   if (!heroGames.length) {
-    featuredCarousel.innerHTML = '<div class="hero-slide"><div class="hero-content"><h2>No featured game yet</h2></div></div>';
-    heroDots.innerHTML = '';
     return;
   }
 
   heroIndex = (index + heroGames.length) % heroGames.length;
-  featuredCarousel.innerHTML = buildHeroSlide(heroGames[heroIndex]);
-  heroDots.innerHTML = heroGames.map((_, idx) => `<button class="hero-dot ${idx === heroIndex ? 'active' : ''}" data-hero-index="${idx}" type="button" aria-label="Slide ${idx + 1}"></button>`).join('');
+
+  Array.from(featuredCarousel.children).forEach((slide, i) => {
+    slide.classList.toggle('active', i === heroIndex);
+  });
+
+  Array.from(heroDots.children).forEach((dot, i) => {
+    dot.classList.toggle('active', i === heroIndex);
+  });
 }
 
 function startHeroAutoPlay() {
@@ -119,7 +123,17 @@ function startHeroAutoPlay() {
 function renderFeatured(games) {
   const featured = games.filter((game) => game.featured);
   heroGames = (featured.length ? featured : games).slice(0, 3);
-  setHero(0);
+
+  if (!heroGames.length) {
+    featuredCarousel.innerHTML = '<div class="hero-slide active"><div class="hero-content"><h2>No featured game yet</h2></div></div>';
+    heroDots.innerHTML = '';
+    heroIndex = 0;
+    return;
+  }
+
+  featuredCarousel.innerHTML = heroGames.map((game, i) => buildHeroSlide(game, i === 0)).join('');
+  heroDots.innerHTML = heroGames.map((_, idx) => `<button class="hero-dot ${idx === 0 ? 'active' : ''}" data-hero-index="${idx}" type="button" aria-label="Slide ${idx + 1}"></button>`).join('');
+  heroIndex = 0;
   startHeroAutoPlay();
 }
 
@@ -166,6 +180,11 @@ function renderGames(games) {
   }).join('');
 }
 
+function refreshGamesOnly() {
+  const allGames = getGames();
+  renderGames(filterGames(allGames));
+}
+
 function refresh() {
   const allGames = getGames();
   renderGenres(allGames);
@@ -179,8 +198,8 @@ async function init() {
   hideSkeletons();
   refresh();
 
-  searchInput.addEventListener('input', debounce(refresh, 300));
-  genreFilter.addEventListener('change', refresh);
+  searchInput.addEventListener('input', debounce(refreshGamesOnly, 300));
+  genreFilter.addEventListener('change', refreshGamesOnly);
   heroDots.addEventListener('click', (event) => {
     const target = event.target.closest('[data-hero-index]');
     if (!target) {
