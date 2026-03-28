@@ -13,6 +13,9 @@ const panels = Array.from(document.querySelectorAll('.tab-panel'));
 const lightboxModal = document.getElementById('lightboxModal');
 const lightboxImage = document.getElementById('lightboxImage');
 const lightboxClose = document.getElementById('lightboxClose');
+const MAX_IMAGE_DIMENSION_DIGITS = 4;
+const MAX_MARKUP_NORMALIZATION_ITERATIONS = 8;
+const IMAGE_DIMENSION_PATTERN = new RegExp(`^\\d{1,${MAX_IMAGE_DIMENSION_DIGITS}}$`);
 
 function byId(id) {
   return document.getElementById(id);
@@ -25,6 +28,10 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function escapeHtmlAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#096;');
 }
 
 function isSafeRichTextUrl(value) {
@@ -67,7 +74,12 @@ function sanitizeRichTextHtml(html) {
       return;
     }
 
+    let removedElement = false;
     Array.from(node.attributes).forEach((attribute) => {
+      if (removedElement) {
+        return;
+      }
+
       const name = attribute.name.toLowerCase();
       const value = attribute.value;
 
@@ -79,6 +91,7 @@ function sanitizeRichTextHtml(html) {
       if (node.tagName === 'IMG') {
         if (name === 'src') {
           if (!isSafeRichTextUrl(value)) {
+            removedElement = true;
             node.remove();
             return;
           }
@@ -87,7 +100,7 @@ function sanitizeRichTextHtml(html) {
         if (name === 'alt' || name === 'title' || name === 'class') {
           return;
         }
-        if ((name === 'width' || name === 'height') && /^\d{1,4}$/.test(value)) {
+        if ((name === 'width' || name === 'height') && IMAGE_DIMENSION_PATTERN.test(value)) {
           return;
         }
         node.removeAttribute(attribute.name);
@@ -100,6 +113,10 @@ function sanitizeRichTextHtml(html) {
 
       node.removeAttribute(attribute.name);
     });
+
+    if (removedElement) {
+      return;
+    }
 
     Array.from(node.childNodes).forEach(sanitizeNode);
   }
@@ -151,20 +168,33 @@ function normalizeBrokenSteamMarkup(value) {
     return text;
   }
 
+  const imageBlocks = [];
+
   text = text.replace(/\r?\n/g, '__BR__');
   text = text.replace(/brbr/gi, '__BR____BR__');
   text = text.replace(/\bbr\b/gi, '__BR__');
-  text = text.replace(/br(?=(?:ul|ol|li|p|strong|b|i|em|span|\/|[A-Z]))/g, '__BR__');
+  text = text.replace(/br(?=(?:ul|ol|li|p|strong|b|i|em|span|\/))/gi, '__BR__');
   text = text.replace(
-    /span\s+class="([^"]*)"\s*img\s+class="([^"]*)"\s+src="([^"]+)"(?:\s+width=(\d+))?(?:\s+height=(\d+))?\s*\/\/span/gi,
-    (_, spanClass, imgClass, src, width, height) => `<span class="${spanClass}"><img class="${imgClass}" src="${src}"${width ? ` width="${width}"` : ''}${height ? ` height="${height}"` : ''} /></span>`
+    /span\s+class="([^"]*)"\s*img\s+class="([^"]*)"\s+src="([^"]+)"(?:\s+width=(\d+))?(?:\s+height=(\d+))?\s*\/{1,2}span/gi,
+    (_, spanClass, imgClass, src, width, height) => {
+      const token = `__STEAM_IMG_${imageBlocks.length}__`;
+      const safeSrc = isSafeRichTextUrl(src) ? escapeHtmlAttribute(src) : '';
+      const safeWidth = width && IMAGE_DIMENSION_PATTERN.test(width) ? escapeHtmlAttribute(width) : '';
+      const safeHeight = height && IMAGE_DIMENSION_PATTERN.test(height) ? escapeHtmlAttribute(height) : '';
+      imageBlocks.push(safeSrc
+        ? `<span class="${escapeHtmlAttribute(spanClass)}"><img class="${escapeHtmlAttribute(imgClass)}" src="${safeSrc}"${safeWidth ? ` width="${safeWidth}"` : ''}${safeHeight ? ` height="${safeHeight}"` : ''} /></span>`
+        : `<span class="${escapeHtmlAttribute(spanClass)}"></span>`);
+      return token;
+    }
   );
 
   let previous = '';
-  while (text !== previous) {
+  let iterations = 0;
+  while (text !== previous && iterations < MAX_MARKUP_NORMALIZATION_ITERATIONS) {
+    iterations += 1;
     previous = text;
-    text = text.replace(/(^|[^<])\/{1,2}(strong|ul|ol|li|p|b|i|em|span)/gi, '$1</$2>');
-    text = text.replace(/(^|__BR__)(ul|ol)\s+class="([^"]*)"/gi, '$1<$2 class="$3">');
+    text = text.replace(/(^|[^<])(\/{1,2})(strong|ul|ol|li|p|b|i|em|span)/gi, '$1</$3>');
+    text = text.replace(/(^|__BR__)(ul|ol)\s+class="([^"]*)"/gi, (_, prefix, tag, className) => `${prefix}<${tag} class="${escapeHtmlAttribute(className)}">`);
     text = text.replace(/(^|__BR__|<\/li>|<\/ul>|<\/ol>|<ul[^>]*>|<ol[^>]*>)(li|p|strong|b|i|em|span)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
     text = text.replace(/(^|<li>|<p>|__BR__|<\/strong>|<\/b>|<\/i>|<\/em>)(strong|b|i|em)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
   }
@@ -173,6 +203,7 @@ function normalizeBrokenSteamMarkup(value) {
   text = text.replace(/__BR__(<\/li>)/gi, '$1');
   text = text.replace(/(<li>)__BR__/gi, '$1');
   text = text.replace(/__BR__/gi, '<br>');
+  text = text.replace(/__STEAM_IMG_(\d+)__/g, (_, index) => imageBlocks[Number(index)] || '');
 
   return text;
 }
