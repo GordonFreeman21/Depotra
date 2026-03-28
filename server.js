@@ -242,10 +242,10 @@ function mergeGameWithSteam(body, steamData, existing = null) {
   const publisher = sanitizeString(body.publisher || fallback.publisher || steamData?.publisher || '', 200);
   const releaseDate = sanitizeString(body.releaseDate || fallback.releaseDate || steamData?.releaseDate || '', 100);
   const tags = sanitizeTags(body.tags ?? fallback.tags ?? steamData?.genres ?? []);
-  const featured = body.featured === true || body.featured === 'true' || body.featured === 'on' || fallback.featured === true;
-  const onlineFix = body.onlineFix === true || body.onlineFix === 'true' || body.onlineFix === 'on' || body.onlineFix === 'yes' || fallback.onlineFix === true;
+  const featured = body.featured === true || body.featured === 'true' || body.featured === 'on';
+  const onlineFix = body.onlineFix === true || body.onlineFix === 'true' || body.onlineFix === 'on' || body.onlineFix === 'yes';
   const onlineFixLink = sanitizeUrl(body.onlineFixLink || fallback.onlineFixLink || '');
-  const genericFix = body.genericFix === true || body.genericFix === 'true' || body.genericFix === 'on' || body.genericFix === 'yes' || fallback.genericFix === true;
+  const genericFix = body.genericFix === true || body.genericFix === 'true' || body.genericFix === 'on' || body.genericFix === 'yes';
   const genericFixLink = sanitizeUrl(body.genericFixLink || fallback.genericFixLink || '');
   const steamAppId = sanitizeString(body.steamAppId || fallback.steamAppId || steamData?.steamAppId || '', 20);
 
