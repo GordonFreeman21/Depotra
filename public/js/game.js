@@ -47,7 +47,7 @@ function sanitizeRichTextHtml(html) {
   const template = document.createElement('template');
   template.innerHTML = html;
 
-  const allowedTags = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'I', 'EM', 'SPAN', 'IMG']);
+  const allowedTags = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'I', 'EM', 'SPAN', 'IMG', 'H2', 'H3', 'VIDEO', 'SOURCE']);
   const dangerousTags = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META']);
 
   function sanitizeNode(node) {
@@ -107,7 +107,44 @@ function sanitizeRichTextHtml(html) {
         return;
       }
 
+      if (node.tagName === 'VIDEO') {
+        if (name === 'class' || name === 'autoplay' || name === 'muted' || name === 'loop' || name === 'playsinline') {
+          return;
+        }
+        if (name === 'poster') {
+          if (!isSafeRichTextUrl(value)) {
+            node.removeAttribute(attribute.name);
+          }
+          return;
+        }
+        if ((name === 'width' || name === 'height') && IMAGE_DIMENSION_PATTERN.test(value)) {
+          return;
+        }
+        node.removeAttribute(attribute.name);
+        return;
+      }
+
+      if (node.tagName === 'SOURCE') {
+        if (name === 'src') {
+          if (!isSafeRichTextUrl(value)) {
+            removedElement = true;
+            node.remove();
+            return;
+          }
+          return;
+        }
+        if (name === 'type' && /^video\/[a-z0-9]+$/i.test(value)) {
+          return;
+        }
+        node.removeAttribute(attribute.name);
+        return;
+      }
+
       if ((node.tagName === 'SPAN' || node.tagName === 'UL' || node.tagName === 'OL') && name === 'class') {
+        return;
+      }
+
+      if ((node.tagName === 'H2' || node.tagName === 'H3') && name === 'class') {
         return;
       }
 
@@ -169,11 +206,28 @@ function normalizeBrokenSteamMarkup(value) {
   }
 
   const imageBlocks = [];
+  const videoBlocks = [];
 
   text = text.replace(/\r?\n/g, '__BR__');
   text = text.replace(/brbr/gi, '__BR____BR__');
   text = text.replace(/\bbr\b/gi, '__BR__');
-  text = text.replace(/br(?=(?:ul|ol|li|p|strong|b|i|em|span|\/))/gi, '__BR__');
+  text = text.replace(/br(?=(?:ul|ol|li|p|strong|b|i|em|span|h[23]|\/))/gi, '__BR__');
+  text = text.replace(
+    /span\s+class="([^"]*)"\s*video\s+class="([^"]*)"\s+autoplay\s+muted\s+loop\s+playsinline(?:\s+crossorigin="[^"]*")?\s+poster="([^"]+)"(?:\s+width=(\d+))?(?:\s+height=(\d+))?\s+source\s+src="([^"]+)"\s+type="([^"]*)"\s*\/video/gi,
+    (_, spanClass, videoClass, poster, width, height, src, type) => {
+      const token = `__STEAM_VIDEO_${videoBlocks.length}__`;
+      const safePoster = isSafeRichTextUrl(poster) ? escapeHtmlAttribute(poster) : '';
+      const safeSrc = isSafeRichTextUrl(src) ? escapeHtmlAttribute(src) : '';
+      const safeWidth = width && IMAGE_DIMENSION_PATTERN.test(width) ? escapeHtmlAttribute(width) : '';
+      const safeHeight = height && IMAGE_DIMENSION_PATTERN.test(height) ? escapeHtmlAttribute(height) : '';
+      const mimeBase = type.split(';')[0].trim();
+      const safeType = /^video\/[a-z0-9]+$/i.test(mimeBase) ? escapeHtmlAttribute(mimeBase) : 'video/webm';
+      videoBlocks.push(safeSrc
+        ? `<span class="${escapeHtmlAttribute(spanClass)}"><video class="${escapeHtmlAttribute(videoClass)}" autoplay muted loop playsinline${safePoster ? ` poster="${safePoster}"` : ''}${safeWidth ? ` width="${safeWidth}"` : ''}${safeHeight ? ` height="${safeHeight}"` : ''}><source src="${safeSrc}" type="${safeType}"></video></span>`
+        : `<span class="${escapeHtmlAttribute(spanClass)}"></span>`);
+      return token;
+    }
+  );
   text = text.replace(
     /span\s+class="([^"]*)"\s*img\s+class="([^"]*)"\s+src="([^"]+)"(?:\s+width=(\d+))?(?:\s+height=(\d+))?\s*\/{1,2}span/gi,
     (_, spanClass, imgClass, src, width, height) => {
@@ -188,13 +242,20 @@ function normalizeBrokenSteamMarkup(value) {
     }
   );
 
+  // Run this after video/image block extraction so URLs inside those blocks
+  // (which may contain 'br' substrings) are already replaced by safe tokens.
+  text = text.replace(/(?<![a-zA-Z])br(?![a-z])/g, '__BR__');
+
   let previous = '';
   let iterations = 0;
   while (text !== previous && iterations < MAX_MARKUP_NORMALIZATION_ITERATIONS) {
     iterations += 1;
     previous = text;
-    text = text.replace(/(^|[^<])(\/{1,2})(strong|ul|ol|li|p|b|i|em|span)/gi, '$1</$3>');
+    text = text.replace(/(^|[^<])(\/{1,2})(strong|ul|ol|li|p|b|i|em|span|h2|h3)/gi, '$1</$3>');
     text = text.replace(/(^|__BR__)(ul|ol)\s+class="([^"]*)"/gi, (_, prefix, tag, className) => `${prefix}<${tag} class="${escapeHtmlAttribute(className)}">`);
+    // __STEAM_VIDEO_N__ and __STEAM_IMG_N__ tokens mark positions of extracted blocks
+    text = text.replace(/(^|__BR__|__STEAM_VIDEO_\d+__|__STEAM_IMG_\d+__)(h[23])\s+class="([^"]*)"/gi, (_, prefix, tag, className) => `${prefix}<${tag} class="${escapeHtmlAttribute(className)}">`);
+    text = text.replace(/(^|__BR__|__STEAM_VIDEO_\d+__|__STEAM_IMG_\d+__|<\/h[23]>)(h[23])(?=[A-Za-z0-9 \u2022])/gi, '$1<$2>');
     text = text.replace(/(^|__BR__|<\/li>|<\/ul>|<\/ol>|<ul[^>]*>|<ol[^>]*>)(li|p|strong|b|i|em|span)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
     text = text.replace(/(^|<li>|<p>|__BR__|<\/strong>|<\/b>|<\/i>|<\/em>)(strong|b|i|em)(?=[A-Za-z0-9"<])/gi, '$1<$2>');
   }
@@ -204,6 +265,7 @@ function normalizeBrokenSteamMarkup(value) {
   text = text.replace(/(<li>)__BR__/gi, '$1');
   text = text.replace(/__BR__/gi, '<br>');
   text = text.replace(/__STEAM_IMG_(\d+)__/g, (_, index) => imageBlocks[Number(index)] || '');
+  text = text.replace(/__STEAM_VIDEO_(\d+)__/g, (_, index) => videoBlocks[Number(index)] || '');
 
   return text;
 }
@@ -254,7 +316,7 @@ function renderRelated(currentGame) {
 
   relatedGames.innerHTML = related.map((item) => `
     <article class="game-card">
-      <img class="game-card-image" src="${escapeHtml(item.imageUrl || '')}" alt="${escapeHtml(item.title)}" />
+      <img class="game-card-image" src="${escapeHtml(item.imageUrl || '')}" alt="${escapeHtml(item.title)}" loading="lazy" />
       <div class="game-card-body">
         <h3 class="game-card-title">${escapeHtml(item.title)}</h3>
         <a class="btn btn-blue" href="game.html?id=${encodeURIComponent(item.id)}">Open</a>
@@ -326,7 +388,7 @@ function renderGame(game) {
   if (screenshots.length) {
     screenshotThumbs.innerHTML = screenshots.slice(0, 8).map((src, idx) => `
       <button class="thumb-btn ${idx === 0 ? 'active' : ''}" data-thumb-index="${idx}" type="button">
-        <img src="${escapeHtml(src)}" alt="Screenshot ${idx + 1}" />
+        <img src="${escapeHtml(src)}" alt="Screenshot ${idx + 1}" loading="lazy" />
       </button>
     `).join('');
 

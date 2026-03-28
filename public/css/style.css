@@ -329,6 +329,7 @@ img {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
+  will-change: transform;
 }
 
 .game-card:hover {
@@ -556,6 +557,34 @@ img {
   display: block;
   content: "";
   margin-top: 6px;
+}
+
+.rich-text h2,
+.rich-text h3 {
+  color: #ffffff;
+  font-weight: 700;
+  margin: 18px 0 10px;
+  line-height: 1.3;
+}
+
+.rich-text h2 {
+  font-size: 1.15rem;
+}
+
+.rich-text h3 {
+  font-size: 1rem;
+}
+
+.rich-text .bb_img_ctn {
+  display: block;
+  margin: 12px 0;
+}
+
+.rich-text video {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  display: block;
 }
 
 .game-sidebar p {
@@ -1210,6 +1239,7 @@ img {
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
   box-shadow: 0 0 20px var(--accent-glow);
+  will-change: transform;
 }
 
 @keyframes spin {
@@ -1232,6 +1262,7 @@ img {
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.04), transparent);
   animation: shimmer 1.6s infinite;
+  will-change: transform;
 }
 
 @keyframes shimmer {

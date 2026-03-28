@@ -145,6 +145,9 @@ async function initializeDatabase() {
     )
   `);
 
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_games_featured ON games(featured)');
+
   const existingAdmin = await pool.query('SELECT id FROM admins WHERE username = $1 LIMIT 1', [DEFAULT_ADMIN.username]);
   if (existingAdmin.rows.length === 0) {
     const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN.password, 10);
@@ -333,6 +336,7 @@ app.get('/api/games', async (req, res) => {
     }
 
     games.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     return res.status(200).json(games);
   } catch {
     return res.status(500).json({ message: 'Server error fetching games' });

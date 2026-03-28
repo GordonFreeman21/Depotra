@@ -1,5 +1,13 @@
 // admin-dashboard.js
 
+function debounce(fn, delay) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 function requireAdmin() {
   const adminRaw = localStorage.getItem('depotra_admin');
   if (!adminRaw) {
@@ -405,7 +413,7 @@ gameForm.addEventListener('submit', async (event) => {
   }
 });
 
-dashboardSearch.addEventListener('input', renderRows);
+dashboardSearch.addEventListener('input', debounce(renderRows, 300));
 
 // Status filter
 statusFilterBtns.forEach((btn) => {
